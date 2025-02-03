@@ -380,7 +380,6 @@
                         chatMessages.removeChild(thinkingElement);
                     }
                     const responseElement = document.createElement('div');
-                    responseElement.className = 'thinking';
                     responseElement.innerHTML = `
                         <div class="message-container">
                             <div class="message-header">
@@ -394,7 +393,7 @@
                                 <span class="agent-type">AI Agent</span>
                             </div>
                             <div class="message-content">
-                                I'll help you with that question about API calls. Our standard plan includes 100,000 API calls per month.
+                                Click the button below to start the tour
                             </div>
                         </div>
                         <div class="quick-responses">
@@ -410,6 +409,32 @@
                 }else{
                     window.tourInstance.driver.drive();
                 }
+            }else if(data.type === 'chat_response'){
+                console.log('chat_response', data);
+                const thinkingElement = document.querySelector('.thinking');
+                if(thinkingElement) {
+                    chatMessages.removeChild(thinkingElement);
+                }
+                const responseElement = document.createElement('div');
+                responseElement.innerHTML = `
+                    <div class="message-container">
+                        <div class="message-header">
+                            <div class="bot-avatar-small">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="white"/>
+                                </svg>
+                            </div>
+                            <span class="agent-name">Percy</span>
+                            <span class="dot">•</span>
+                            <span class="agent-type">AI Agent</span>
+                        </div>
+                        <div class="message-content">
+                           ${data.message}
+                        </div>
+                    </div>
+                `;
+                chatMessages.appendChild(responseElement);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
             }
         } catch (error) {
             console.error('Error processing WebSocket message:', error);
@@ -575,14 +600,11 @@
         // Use secure WebSocket in production, regular in development
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         // const ws = new WebSocket(`${protocol}//5532-49-47-195-218.ngrok-free.app:3001`);
-        const ws = new WebSocket(`https://5532-49-47-195-218.ngrok-free.app`);
+        const ws = new WebSocket(`https://37b5-103-119-178-99.ngrok-free.app`);
+        // const ws = new WebSocket(`http://localhost:3001`);
         ws.onopen = () => {
             console.log('WebSocket connected');
         };
-
-        // ws.onmessage = (event) => {
-            
-        // };
 
         ws.onerror = (error) => {
             console.error('WebSocket error:', error);
@@ -590,7 +612,6 @@
 
         ws.onclose = () => {
             console.log('WebSocket disconnected');
-            // Optionally implement reconnection logic
             setTimeout(setupWebSocket, 5000);
         };
 
@@ -793,50 +814,4 @@
         initTour();
     }
 
-    // Add these styles to the document
-    const styleSheet = document.createElement('style');
-    styleSheet.textContent = `
-        @keyframes innerRipple {
-            0% {
-                transform: scale(0.25);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        @keyframes outerRipple {
-            0% {
-                transform: scale(0.25);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 0;
-            }
-        }
-
-
-        .driver-highlight-circle.inner-circle {
-            box-shadow: 0 0 10px rgba(255, 92, 53, 0.3);
-        }
-
-        .driver-highlight-circle.outer-circle {
-            animation: outerRipple 1s infinite ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    `;
-    document.head.appendChild(styleSheet);
 })(); 
