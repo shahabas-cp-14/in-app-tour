@@ -256,7 +256,7 @@
                             `;
                             document.body.appendChild(innerCircle);
 
-                            }, 100);
+                            }, 1000);
                         }
                     },
 
@@ -264,7 +264,7 @@
                         // add delay
                         setTimeout(() => {
                             checkStepComplete();
-                        }, 2500);
+                        }, 1000);
                     },
                     onDestroyed: () => {
                         // remove highlight
@@ -297,13 +297,16 @@
 
                                     //   destroy tour
                                     window.tourInstance.driver.destroy();
-                                    window.wsConnection.send(JSON.stringify({
-                                        type: 'stepComplete',
-                                        flowId: data.flowId,
+                                    // add delay
+                                    setTimeout(() => {
+                                        window.wsConnection.send(JSON.stringify({
+                                            type: 'stepComplete',
+                                            flowId: data.flowId,
                                         stepIndex: data.currentStep.stepIndex,
                                         currentUrl: window.location.href,
-                                        actionCompleted: true
-                                    }));
+                                            actionCompleted: true
+                                        }));
+                                    }, 1500);
                                 };
                                 clickElement.addEventListener('click', clickHandler);
                             } else if (data.currentStep.action === 'input') {
@@ -324,15 +327,17 @@
 
                                         //   destroy tour
                                         window.tourInstance.driver.destroy();
-                                        window.wsConnection.send(JSON.stringify({
-                                            type: 'stepComplete',
-                                            flowId: data.flowId,
-                                            stepIndex: data.currentStep.stepIndex,
-                                            currentUrl: window.location.href,
-                                            actionCompleted: true,
+                                        setTimeout(() => {
+                                            window.wsConnection.send(JSON.stringify({
+                                                type: 'stepComplete',
+                                                flowId: data.flowId,
+                                                stepIndex: data.currentStep.stepIndex,
+                                                currentUrl: window.location.href,
+                                                actionCompleted: true,
                                             value: event.target.value,
                                             isBlur: true
-                                        }));
+                                            }));
+                                        }, 1500);
                                     // }
                                 };
 
@@ -600,8 +605,8 @@
         // Use secure WebSocket in production, regular in development
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         // const ws = new WebSocket(`${protocol}//5532-49-47-195-218.ngrok-free.app:3001`);
-        const ws = new WebSocket(`https://37b5-103-119-178-99.ngrok-free.app`);
-        // const ws = new WebSocket(`http://localhost:3001`);
+        // const ws = new WebSocket(`https://37b5-103-119-178-99.ngrok-free.app`);
+        const ws = new WebSocket(`http://localhost:3001`);
         ws.onopen = () => {
             console.log('WebSocket connected');
         };
