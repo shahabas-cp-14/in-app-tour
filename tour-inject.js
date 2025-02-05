@@ -631,45 +631,12 @@
         document.querySelectorAll('.start-tour-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 e.stopPropagation();
-
-                //check element is visible
-                const messageData = window.tourInstance.flowConfig;
-                const processedSteps = window.tourInstance.processSteps();  
-                console.log('processedSteps.....', processedSteps);
-                const currentStepElement =processedSteps[0].element;
-                console.log('currentStepElement.....', currentStepElement);
-                const isVisible = document.querySelector(currentStepElement);
-                console.log('isVisible.....', isVisible);
-                // hide start tour button
                 document.querySelectorAll('.start-tour-btn').forEach(button => {
                     button.style.display = 'none';
                 });
-                if(!isVisible) {
-                    const responseElement = document.createElement('div');
-                    responseElement.innerHTML = `
-                        <div class="message-container">
-                            <div class="message-header">
-                                <div class="bot-avatar-small">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="white"/>
-                                    </svg>
-                                </div>
-                                <span class="agent-name">Percy</span>
-                                <span class="dot">•</span>
-                                <span class="agent-type">AI Agent</span>
-                            </div>
-                            <div class="message-content">
-                                Goto ${messageData.currentStep.url} and start the tour
-                            </div>
-                        </div>
-                    `;
-                    chatMessages.appendChild(responseElement);
-                 }else{
-                    window.tourInstance.driver.drive();
-                    // click chat button
-                    chatButton.click();
-                }
-               
+                window.tourInstance.driver.drive();
+                // click chat button
+                chatButton.click();
             });
         });
     }
@@ -835,18 +802,40 @@
                     if (currentStep && currentStep.element) {
                         let selector;
                         if(currentStep.action === 'click') {
-                            // Find button by tag and text content
-                            const buttonSelector = currentStep.element.tagName.toLowerCase();
-                            const targetElement = this.findElementByText(buttonSelector, currentStep.element.textContent);
-                            // Add a unique identifier to the found element
-                            if (targetElement) {
-                                const uniqueId = 'tour-' + Math.random().toString(36).substr(2, 9);
-                                targetElement.setAttribute('data-tour-id', uniqueId);
-                                selector = `[data-tour-id="${uniqueId}"]`;
+                            // Handle click actions for any element type
+                            if (currentStep.element.xpath && currentStep.element.tagName.toLowerCase() !== 'button') {
+                                // Try XPath first if available
+                                const element = document.evaluate(
+                                    currentStep.element.xpath,
+                                    document,
+                                    null,
+                                    XPathResult.FIRST_ORDERED_NODE_TYPE,
+                                    null
+                                ).singleNodeValue;
+                                
+                                if (element) {
+                                    const uniqueId = 'tour-' + Math.random().toString(36).substr(2, 9);
+                                    element.setAttribute('data-tour-id', uniqueId);
+                                    selector = `[data-tour-id="${uniqueId}"]`;
+                                }
+                            } else {
+                                // If no XPath, try finding element by tag and text content
+                                const elementSelector = currentStep.element.tagName.toLowerCase();
+                                const targetElement = this.findElementByText(elementSelector, currentStep.element.textContent);
+                                
+                                if (targetElement) {
+                                    const uniqueId = 'tour-' + Math.random().toString(36).substr(2, 9);
+                                    targetElement.setAttribute('data-tour-id', uniqueId);
+                                    selector = `[data-tour-id="${uniqueId}"]`;
+                                } else if (currentStep.element.className) {
+                                    // Try finding by className if text search fails
+                                    selector = `.${currentStep.element.className.split(' ')[0]}`;
+                                }
                             }
                         } else if(currentStep.element.tagName.toLowerCase() === 'input' || 
                             currentStep.element.tagName.toLowerCase() === 'textarea') {
                             selector = this.getLocatorByName(currentStep.element);
+                            console.log('selector', selector);
                         } else if(currentStep.element.tagName.toLowerCase() === 'select') {
                             if (currentStep.element.xpath) {
                                 // First try to find the element using XPath
