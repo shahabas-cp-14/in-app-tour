@@ -209,26 +209,28 @@
                     onHighlightStarted: (element) => {
                         if (element) {
                             setTimeout(() => {
-                            const rect = element.getBoundingClientRect();
-                            const popoverArrowRect = document.querySelector('.driver-popover-arrow').getBoundingClientRect();
+                            // Get popover element
+                            const popover = document.querySelector('.driver-popover-arrow');
+                            const popoverRect = popover.getBoundingClientRect();
                             const innerSize = 15;
                             const outerSize = 40;
                             
                             // Determine if arrow is pointing left or right
                             const arrowElement = document.querySelector('.driver-popover-arrow');
-                            const  isArrowRight= arrowElement.classList.contains('driver-popover-arrow-side-left');
+                            const isArrowRight = arrowElement.classList.contains('driver-popover-arrow-side-left');
                             const isArrowLeft = arrowElement.classList.contains('driver-popover-arrow-side-right');
                             
-                            // Adjust position based on arrow direction
-                            const positionAdjustment = isArrowLeft ? -40 : isArrowRight ? 40 : 0;
+                            // Calculate position relative to popover
+                            const positionX = isArrowLeft ? -40 : isArrowRight ? popoverRect.width + 40 : popoverRect.width/2;
+                            const positionY = popoverRect.height/2;
                             
-                            // Create outer circle with adjusted position
+                            // Create outer circle with position relative to popover
                             const outerCircle = document.createElement('div');
                             outerCircle.className = 'driver-highlight-circle outer-circle';
                             outerCircle.style.cssText = `
-                                position: fixed;
-                                top: ${rect.top + rect.height/2 - outerSize/2}px;
-                                left: ${popoverArrowRect.left + positionAdjustment - outerSize/2 + popoverArrowRect.width/2}px;
+                                position: absolute;
+                                top: ${positionY - outerSize/2}px;
+                                left: ${positionX - outerSize/2}px;
                                 width: ${outerSize}px;
                                 height: ${outerSize}px;
                                 border-radius: 50%;
@@ -237,15 +239,15 @@
                                 z-index: 10000;
                                 animation: outerRipple 1s infinite;
                             `;
-                            document.body.appendChild(outerCircle);
+                            popover.appendChild(outerCircle);
 
-                            // Create inner circle with adjusted position
+                            // Create inner circle with position relative to popover
                             const innerCircle = document.createElement('div');
                             innerCircle.className = 'driver-highlight-circle inner-circle';
                             innerCircle.style.cssText = `
-                                position: fixed;
-                                top: ${rect.top + rect.height/2 - innerSize/2}px;
-                                left: ${popoverArrowRect.left + positionAdjustment - innerSize/2 + popoverArrowRect.width/2}px;
+                                position: absolute;
+                                top: ${positionY - innerSize/2}px;
+                                left: ${positionX - innerSize/2}px;
                                 width: ${innerSize}px;
                                 height: ${innerSize}px;
                                 border-radius: 50%;
@@ -254,9 +256,9 @@
                                 z-index: 10001;
                                 animation: innerRipple 1s infinite;
                             `;
-                            document.body.appendChild(innerCircle);
+                            popover.appendChild(innerCircle);
 
-                            }, 1000);
+                            }, 500);
                         }
                     },
 
@@ -306,12 +308,20 @@
                                         currentUrl: window.location.href,
                                             actionCompleted: true
                                         }));
-                                    }, 1500);
+                                    }, 1000);
                                 };
                                 clickElement.addEventListener('click', clickHandler);
                             } else if (data.currentStep.action === 'input') {
-                                // Monitor for input changes and blur
+
                                 const inputElement = document.querySelector(currentStepElement);
+                                // if user clicks on the input element, hide the popover
+                                console.log('inputElement', inputElement);
+                                inputElement.addEventListener('click', () => {
+                                    const popover = document.querySelector('.driver-popover');
+                                    popover.style.display = 'none';
+                                });
+                                // Monitor for input changes and blur
+                                
                                 console.log('inputElement', inputElement);
                                 const blurHandler = (event) => {
                                     console.log('Input blur, final value:', event.target.value);
@@ -337,7 +347,7 @@
                                             value: event.target.value,
                                             isBlur: true
                                             }));
-                                        }, 1500);
+                                        }, 1000);
                                     // }
                                 };
 
@@ -440,6 +450,67 @@
                 `;
                 chatMessages.appendChild(responseElement);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
+            }else if(data.type === 'clarifying_questions'){
+                const thinkingElement = document.querySelector('.thinking');
+                if(thinkingElement) {
+                    chatMessages.removeChild(thinkingElement);
+                }
+                const responseElement = document.createElement('div');
+                responseElement.innerHTML = `
+                    <div class="message-container">
+                        <div class="message-header">
+                            <div class="bot-avatar-small">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="white"/>
+                                </svg>
+                            </div>
+                            <span class="agent-name">Percy</span>
+                            <span class="dot">•</span>
+                            <span class="agent-type">AI Agent</span>
+                        </div>
+                        <div class="message-content">
+                           ${data.message}
+                        </div>
+                        ${data.options.length > 0 ? `
+                        <div class="quick-responses">
+                            ${data.options.map(option => `
+                                <button class="quick-response-btn" data-response="${option}">${option}</button>
+                            `).join('')}
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                chatMessages.appendChild(responseElement);
+                
+                // Add click handlers for the new quick response buttons
+                const quickResponseButtons = responseElement.querySelectorAll('.quick-response-btn');
+                quickResponseButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const selectedResponse = e.target.dataset.response;
+                        
+                        // Send the selected response through WebSocket
+                        window.wsConnection.send(JSON.stringify({
+                            type: 'query',
+                            message: selectedResponse,
+                            currentUrl: window.location.href
+                        }));
+                        
+                        // Disable all buttons in this quick response group
+                        quickResponseButtons.forEach(btn => {
+                            btn.disabled = true;
+                            btn.style.opacity = '0.5';
+                        });
+                        
+                        // Highlight the selected button
+                        e.target.style.opacity = '1';
+                        e.target.style.backgroundColor = '#FF5C35';
+
+                        // remove quick responses
+                        responseElement.querySelector('.quick-responses').remove();
+                    });
+                });
+                
+                chatMessages.scrollTop = chatMessages.scrollHeight;
             }
         } catch (error) {
             console.error('Error processing WebSocket message:', error);
@@ -525,14 +596,6 @@
             `;
             chatMessages.appendChild(thinkingElement);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // Simulate AI response after thinking
-            // setTimeout(() => {
-            //     // Remove thinking indicator
-            //     chatMessages.removeChild(thinkingElement);
-                
-                
-            // }, 2000);
         }
     }
 
@@ -568,13 +631,45 @@
         document.querySelectorAll('.start-tour-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 e.stopPropagation();
-                window.tourInstance.driver.drive();
+
+                //check element is visible
+                const messageData = window.tourInstance.flowConfig;
+                const processedSteps = window.tourInstance.processSteps();  
+                console.log('processedSteps.....', processedSteps);
+                const currentStepElement =processedSteps[0].element;
+                console.log('currentStepElement.....', currentStepElement);
+                const isVisible = document.querySelector(currentStepElement);
+                console.log('isVisible.....', isVisible);
                 // hide start tour button
                 document.querySelectorAll('.start-tour-btn').forEach(button => {
                     button.style.display = 'none';
                 });
-                // click chat button
-                chatButton.click();
+                if(!isVisible) {
+                    const responseElement = document.createElement('div');
+                    responseElement.innerHTML = `
+                        <div class="message-container">
+                            <div class="message-header">
+                                <div class="bot-avatar-small">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="white"/>
+                                    </svg>
+                                </div>
+                                <span class="agent-name">Percy</span>
+                                <span class="dot">•</span>
+                                <span class="agent-type">AI Agent</span>
+                            </div>
+                            <div class="message-content">
+                                Goto ${messageData.currentStep.url} and start the tour
+                            </div>
+                        </div>
+                    `;
+                    chatMessages.appendChild(responseElement);
+                 }else{
+                    window.tourInstance.driver.drive();
+                    // click chat button
+                    chatButton.click();
+                }
+               
             });
         });
     }
@@ -605,7 +700,7 @@
         // Use secure WebSocket in production, regular in development
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         // const ws = new WebSocket(`${protocol}//5532-49-47-195-218.ngrok-free.app:3001`);
-        // const ws = new WebSocket(`https://37b5-103-119-178-99.ngrok-free.app`);
+        // const ws = new WebSocket(`https://ca61-103-119-178-99.ngrok-free.app`);
         const ws = new WebSocket(`http://localhost:3001`);
         ws.onopen = () => {
             console.log('WebSocket connected');
@@ -646,9 +741,39 @@
                     this.flowConfig = flowConfig;
                 }
 
-                getLocatorByName(element){
-                    const selector = `${element.tagName}[name="${element.name}"]`
-                    return selector;
+                getLocatorByName(element) {
+                    // Check if there are multiple elements with the same name
+                    const elements = document.querySelectorAll(`${element.tagName}[name="${element.name}"]`);
+                    
+                    if (elements.length > 1) {
+                        // If multiple elements found, try to find the most specific match
+                        // First try to match using additional attributes if available
+                        if (element.className) {
+                            const withClass = Array.from(elements).find(el => 
+                                el.className === element.className
+                            );
+                            if (withClass) {
+                                const uniqueId = 'tour-' + Math.random().toString(36).substr(2, 9);
+                                withClass.setAttribute('data-tour-id', uniqueId);
+                                return `[data-tour-id="${uniqueId}"]`;
+                            }
+                        }
+                        
+                        // If no specific match found using class, try to find the first visible element
+                        const visibleElement = Array.from(elements).find(el => {
+                            const style = window.getComputedStyle(el);
+                            return style.display !== 'none' && style.visibility !== 'hidden';
+                        });
+                        
+                        if (visibleElement) {
+                            const uniqueId = 'tour-' + Math.random().toString(36).substr(2, 9);
+                            visibleElement.setAttribute('data-tour-id', uniqueId);
+                            return `[data-tour-id="${uniqueId}"]`;
+                        }
+                    }
+                    
+                    // If only one element or no better match found, return the basic selector
+                    return `${element.tagName}[name="${element.name}"]`;
                 }
 
                 getLocatorByTextContent(element) {
@@ -720,7 +845,7 @@
                                 selector = `[data-tour-id="${uniqueId}"]`;
                             }
                         } else if(currentStep.element.tagName.toLowerCase() === 'input' || 
-                                currentStep.element.tagName.toLowerCase() === 'textarea') {
+                            currentStep.element.tagName.toLowerCase() === 'textarea') {
                             selector = this.getLocatorByName(currentStep.element);
                         } else if(currentStep.element.tagName.toLowerCase() === 'select') {
                             if (currentStep.element.xpath) {
