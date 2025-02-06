@@ -209,62 +209,88 @@
                     // Add custom styles for the highlighted element
                     onHighlightStarted: (element) => {
                         if (element) {
-                            setTimeout(() => {
-                            // Get popover element
-                            const popover = document.querySelector('.driver-popover-arrow');
-                            const popoverRect = popover.getBoundingClientRect();
-                            const innerSize = 15;
-                            const outerSize = 40;
+                            // Add smooth transition to popover
+                            const popover = document.querySelector('.driver-popover');
+                            if (popover) {
+                                popover.style.transition = 'all 0.3s ease-in-out';
+                            }
                             
-                            // Determine if arrow is pointing left or right
-                            const arrowElement = document.querySelector('.driver-popover-arrow');
-                            const isArrowRight = arrowElement.classList.contains('driver-popover-arrow-side-left');
-                            const isArrowLeft = arrowElement.classList.contains('driver-popover-arrow-side-right');
+                            // Use a more gentle scroll
+                            element.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'center',
+                                inline: 'center'
+                            });
                             
-                            // Calculate position relative to popover
-                            const positionX = isArrowLeft ? -40 : isArrowRight ? popoverRect.width + 40 : popoverRect.width/2;
-                            const positionY = popoverRect.height/2;
-                            
-                            // Create outer circle with position relative to popover
-                            const outerCircle = document.createElement('div');
-                            outerCircle.className = 'driver-highlight-circle outer-circle';
-                            outerCircle.style.cssText = `
-                                position: absolute;
-                                top: ${positionY - outerSize/2}px;
-                                left: ${positionX - outerSize/2}px;
-                                width: ${outerSize}px;
-                                height: ${outerSize}px;
-                                border-radius: 50%;
-                                border: 2px solid rgba(255, 92, 53, 0.5);
-                                pointer-events: none;
-                                z-index: 10000;
-                                animation: outerRipple 1s infinite;
-                            `;
-                            popover.appendChild(outerCircle);
+                            // Use multiple refresh calls to ensure smooth repositioning
+                            const refreshPositions = () => {
+                                window.tourInstance.driver.refresh();
+                            };
 
-                            // Create inner circle with position relative to popover
-                            const innerCircle = document.createElement('div');
-                            innerCircle.className = 'driver-highlight-circle inner-circle';
-                            innerCircle.style.cssText = `
-                                position: absolute;
-                                top: ${positionY - innerSize/2}px;
-                                left: ${positionX - innerSize/2}px;
-                                width: ${innerSize}px;
-                                height: ${innerSize}px;
-                                border-radius: 50%;
-                                border: 3px solid #FF5C35;
-                                pointer-events: none;
-                                z-index: 10001;
-                                animation: innerRipple 1s infinite;
-                            `;
-                            popover.appendChild(innerCircle);
+                            // Schedule multiple refresh calls during the scroll
+                            const refreshInterval = setInterval(refreshPositions, 100);
+                            
+                            // Final cleanup and positioning after scroll completes
+                            setTimeout(() => {
+                                clearInterval(refreshInterval);
+                                refreshPositions();
+                                
+                                // Get popover element for highlight circles
+                                const popover = document.querySelector('.driver-popover-arrow');
+                                const popoverRect = popover.getBoundingClientRect();
+                                const innerSize = 15;
+                                const outerSize = 40;
+                                
+                                // Determine if arrow is pointing left or right
+                                const arrowElement = document.querySelector('.driver-popover-arrow');
+                                const isArrowRight = arrowElement.classList.contains('driver-popover-arrow-side-left');
+                                const isArrowLeft = arrowElement.classList.contains('driver-popover-arrow-side-right');
+                                
+                                // Calculate position relative to popover
+                                const positionX = isArrowLeft ? -40 : isArrowRight ? popoverRect.width + 40 : popoverRect.width/2;
+                                const positionY = popoverRect.height/2;
+                                
+                                // Create outer circle with position relative to popover
+                                const outerCircle = document.createElement('div');
+                                outerCircle.className = 'driver-highlight-circle outer-circle';
+                                outerCircle.style.cssText = `
+                                    position: absolute;
+                                    top: ${positionY - outerSize/2}px;
+                                    left: ${positionX - outerSize/2}px;
+                                    width: ${outerSize}px;
+                                    height: ${outerSize}px;
+                                    border-radius: 50%;
+                                    border: 2px solid rgba(255, 92, 53, 0.5);
+                                    pointer-events: none;
+                                    z-index: 10000;
+                                    animation: outerRipple 1s infinite;
+                                `;
+                                popover.appendChild(outerCircle);
+
+                                // Create inner circle with position relative to popover
+                                const innerCircle = document.createElement('div');
+                                innerCircle.className = 'driver-highlight-circle inner-circle';
+                                innerCircle.style.cssText = `
+                                    position: absolute;
+                                    top: ${positionY - innerSize/2}px;
+                                    left: ${positionX - innerSize/2}px;
+                                    width: ${innerSize}px;
+                                    height: ${innerSize}px;
+                                    border-radius: 50%;
+                                    border: 3px solid #FF5C35;
+                                    pointer-events: none;
+                                    z-index: 10001;
+                                    animation: innerRipple 1s infinite;
+                                `;
+                                popover.appendChild(innerCircle);
 
                             }, 500);
                         }
                     },
 
                     onPopoverRender: () => {
-                        // add delay
+                       
+
                         setTimeout(() => {
                             checkStepComplete();
                         }, 1000);
@@ -303,7 +329,7 @@
                                     // add delay
                                     setTimeout(() => {
                                         window.wsConnection.send(JSON.stringify({
-                                            type: 'stepComplete',
+                                            type: 'step_complete',
                                             flowId: data.flowId,
                                         stepIndex: data.currentStep.stepIndex,
                                         currentUrl: window.location.href,
@@ -340,7 +366,7 @@
                                         window.tourInstance.driver.destroy();
                                         setTimeout(() => {
                                             window.wsConnection.send(JSON.stringify({
-                                                type: 'stepComplete',
+                                                type: 'step_complete',
                                                 flowId: data.flowId,
                                                 stepIndex: data.currentStep.stepIndex,
                                                 currentUrl: window.location.href,
@@ -376,7 +402,7 @@
                                 //   destroy tour
                                 window.tourInstance.driver.destroy();
                                 window.wsConnection.send(JSON.stringify({
-                                    type: 'stepComplete',
+                                    type: 'step_complete',
                                     flowId: data.flowId,
                                     stepIndex: data.currentStep.stepIndex,
                                     currentUrl: window.location.href,
@@ -451,7 +477,7 @@
                 `;
                 chatMessages.appendChild(responseElement);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
-            }else if(data.type === 'clarifying_questions'){
+            }else if(data.type === "clarification_needed"){
                 const thinkingElement = document.querySelector('.thinking');
                 if(thinkingElement) {
                     chatMessages.removeChild(thinkingElement);
@@ -472,10 +498,10 @@
                         <div class="message-content">
                            ${data.message}
                         </div>
-                        ${data.options.length > 0 ? `
+                        ${data.suggestedFlows.length > 0 ? `
                         <div class="quick-responses">
-                            ${data.options.map(option => `
-                                <button class="quick-response-btn" data-response="${option}">${option}</button>
+                            ${data.suggestedFlows.map(option => `
+                                <button class="quick-response-btn" data-response="${option.name}">${option.name}</button>
                             `).join('')}
                         </div>
                         ` : ''}
@@ -505,6 +531,18 @@
                         // Highlight the selected button
                         e.target.style.opacity = '1';
                         e.target.style.backgroundColor = '#FF5C35';
+                        
+                        // add user message
+                        const messageElement = document.createElement('div');
+                        messageElement.className = 'message sent';
+                        messageElement.innerHTML = `
+                            <div class="message-container">
+                                <div class="message-content">
+                                    ${selectedResponse}
+                                </div>
+                            </div>
+                        `;
+                        chatMessages.appendChild(messageElement);
 
                         // remove quick responses
                         responseElement.querySelector('.quick-responses').remove();
@@ -666,8 +704,8 @@
     function setupWebSocket() {
         console.log('setupWebSocket');
         // Use secure WebSocket in production, regular in development
-        const ws = new WebSocket(`http://localhost:3001`);
-        // const ws = new WebSocket(`https://inapp.uniskool.net`);
+        // const ws = new WebSocket(`http://localhost:3001`);
+        const ws = new WebSocket(`https://inapp.uniskool.net`);
         ws.onopen = () => {
             console.log('WebSocket connected');
         };
@@ -803,25 +841,56 @@
                         if(currentStep.action === 'click') {
                             // Handle click actions for any element type
                             if (currentStep.element.xpath && currentStep.element.tagName.toLowerCase() !== 'button') {
-                                // Try XPath first if available
-                                const element = document.evaluate(
-                                    currentStep.element.xpath,
-                                    document,
-                                    null,
-                                    XPathResult.FIRST_ORDERED_NODE_TYPE,
-                                    null
-                                ).singleNodeValue;
-                                
-                                if (element) {
-                                    const uniqueId = 'tour-' + Math.random().toString(36).substr(2, 9);
-                                    element.setAttribute('data-tour-id', uniqueId);
-                                    selector = `[data-tour-id="${uniqueId}"]`;
+                                try {
+                                    // Try XPath first if available
+                                    const element = document.evaluate(
+                                        currentStep.element.xpath,
+                                        document,
+                                        null,
+                                        XPathResult.FIRST_ORDERED_NODE_TYPE,
+                                        null
+                                    ).singleNodeValue;
+                                    
+                                    if (element) {
+                                        const uniqueId = 'tour-' + Math.random().toString(36).substr(2, 9);
+                                        element.setAttribute('data-tour-id', uniqueId);
+                                        selector = `[data-tour-id="${uniqueId}"]`;
+                                    } else {
+                                        // Fallback #1: Try finding by className
+                                        if (currentStep.element.className) {
+                                            const elementsByClass = document.getElementsByClassName(currentStep.element.className);
+                                            if (elementsByClass.length > 0) {
+                                                const uniqueId = 'tour-' + Math.random().toString(36).substr(2, 9);
+                                                elementsByClass[0].setAttribute('data-tour-id', uniqueId);
+                                                selector = `[data-tour-id="${uniqueId}"]`;
+                                            }
+                                        }
+                                        
+                                        // Fallback #2: Try finding by tag and text content
+                                        if (!selector && currentStep.element.textContent) {
+                                            const elementSelector = currentStep.element.tagName.toLowerCase();
+                                            const targetElement = this.findElementByText(elementSelector, currentStep.element.textContent);
+                                            if (targetElement) {
+                                                const uniqueId = 'tour-' + Math.random().toString(36).substr(2, 9);
+                                                targetElement.setAttribute('data-tour-id', uniqueId);
+                                                selector = `[data-tour-id="${uniqueId}"]`;
+                                            }
+                                        }
+                                        
+                                        // Log warning if no element found
+                                        if (!selector) {
+                                            console.warn('Could not find element with XPath:', currentStep.element.xpath);
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.error('Error evaluating XPath:', error);
+                                    // Continue with fallback mechanisms as above
                                 }
                             } else {
                                 // If no XPath, try finding element by tag and text content
                                 const elementSelector = currentStep.element.tagName.toLowerCase();
                                 const targetElement = this.findElementByText(elementSelector, currentStep.element.textContent);
-                                
+                                console.log('targetElement....', targetElement);
                                 if (targetElement) {
                                     const uniqueId = 'tour-' + Math.random().toString(36).substr(2, 9);
                                     targetElement.setAttribute('data-tour-id', uniqueId);
@@ -830,6 +899,7 @@
                                     // Try finding by className if text search fails
                                     selector = `.${currentStep.element.className.split(' ')[0]}`;
                                 }
+                                console.log('selector..', selector);
                             }
                         } else if(currentStep.element.tagName.toLowerCase() === 'input' || 
                             currentStep.element.tagName.toLowerCase() === 'textarea') {

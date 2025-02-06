@@ -650,16 +650,17 @@
 }
 
 .quick-response-btn {
-    width: 100%;
-    padding: 12px 16px;
-    background: white;
-    border: 1px solid #E5E7EB;
+    background: #FF5C35;
+    color: white;
     border-radius: 12px;
-    color: #666;
+    padding: 12px 16px;
     font-size: 14px;
+    font-weight: 600;
     text-align: left;
     cursor: pointer;
     transition: all 0.2s ease;
+    width: auto;
+    text-align: center;
 }
 
 .start-tour-btn {
@@ -676,19 +677,13 @@
     text-align: center;
 }
 
-.start-tour-btn:hover {
+.start-tour-btn:hover, .quick-response-btn:hover {
     background: #FF5C35;
     color: white;
 }
 
-.quick-response-btn:hover {
-    background: #F3F4F6;
-    border-color: #D1D5DB;
-}
 
-.quick-response-btn:active {
-    background: #E5E7EB;
-}
+
 
 /* Add this to your existing media query for better mobile support */
 @media (max-width: 480px) {
