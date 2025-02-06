@@ -3,7 +3,17 @@
     // Load external CSS file
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'http://localhost:8080/styles.css';
+    // link.href = 'http://localhost:8080/styles.css';
+    // link.href = 'https://d1r3pujcxsvtsx.cloudfront.net/styles.css';
+    link.href = 'https://in-app-chat-widget-assets.s3.ap-south-1.amazonaws.com/styles.css';
+    link.onerror = () => {
+        console.error('Failed to load CSS file:', link.href);
+    };
+    
+    link.onload = () => {
+        console.log('CSS file loaded successfully');
+    };
+    
     document.head.appendChild(link);
 
      // HTML template directly in JS (matching index.html structure)
@@ -117,16 +127,7 @@
                  </div>
              </div>
 
-             <!-- Add this before the chat-input div in the conversation state -->
-             <div class="chat-actions">
-                 <div class="action-status">
-                     <svg viewBox="0 0 24 24" fill="none">
-                         <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14z" fill="currentColor"/>
-                         <path d="M9 8h6v2H9zm0 3h6v2H9zm0 3h6v2H9z" fill="currentColor"/>
-                     </svg>
-                     <span>Agent is showing content...</span>
-                 </div>
-             </div>
+            
 
              <div class="chat-input">
                  <input type="text" id="messageInput" placeholder="Ask a question...">
@@ -199,9 +200,9 @@
                     overlayClickNext: true,
                     clickOutsideDeactivates: false,
                     disableActiveInteraction: false,
-                    doneBtnText: 'OK',
+                    doneBtnText: 'Dismiss Tour',
                     doneBtn: false,
-                    popoverClass: 'custom-popover',
+                    popoverClass: 'custom-popover ',
                     
                     
                     
@@ -665,10 +666,8 @@
     function setupWebSocket() {
         console.log('setupWebSocket');
         // Use secure WebSocket in production, regular in development
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        // const ws = new WebSocket(`${protocol}//5532-49-47-195-218.ngrok-free.app:3001`);
-        // const ws = new WebSocket(`https://ca61-103-119-178-99.ngrok-free.app`);
         const ws = new WebSocket(`http://localhost:3001`);
+        // const ws = new WebSocket(`https://inapp.uniskool.net`);
         ws.onopen = () => {
             console.log('WebSocket connected');
         };
